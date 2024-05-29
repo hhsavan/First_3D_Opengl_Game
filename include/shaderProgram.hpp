@@ -3,6 +3,8 @@
 
 #include<string>
 #include<map>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 class ShaderProgram
 {
@@ -17,7 +19,9 @@ public:
     void use();
     
     void addUniform(const std::string& varName);
-    void setUniform(const std::string& varName, const float value);
+    void setFloat(const std::string& varName, const float value);
+    void setVec3(const std::string& varName, const glm::vec3& vec);
+    void setVec4(const std::string& varName, const glm::vec4& vec);
 private:
     std::string getShaderFromFile(const char* fileName);
     

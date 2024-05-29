@@ -34,9 +34,17 @@ void ShaderProgram::addUniform(const std::string& varName)
 {
     m_UniformMap[varName] =   glGetUniformLocation(m_ProgramId,varName.c_str());
 }
-void ShaderProgram::setUniform(const std::string& varName,float value)
+void ShaderProgram::setFloat(const std::string& varName,float value)
 {
     glUniform1f(m_UniformMap[varName],value);
+}
+void ShaderProgram::setVec3(const std::string& varName,const glm::vec3& vec)
+{
+    glUniform3f(m_UniformMap[varName],vec.x,vec.y,vec.z);
+}
+void ShaderProgram::setVec4(const std::string& varName,const glm::vec4& vec)
+{
+    glUniform4f(m_UniformMap[varName],vec.r,vec.g,vec.b,vec.a);
 }
 void ShaderProgram::attachShader(const char* fileName,unsigned int shaderType)
 {
