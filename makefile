@@ -3,11 +3,12 @@ CXXFLAGS = -std=c++11 -Wall
 LDFLAGS = -lglfw -lGLEW -lGL
 
 TARGET = main
-SOURCES = main.cpp
+SOURCES = src/*
+HEADERS = include/*
 
 all: $(TARGET)
 
-$(TARGET): $(SOURCES)
+$(TARGET): $(SOURCES) $(HEADERS)
 	$(CC) $(CXXFLAGS) -o $(TARGET) $(SOURCES) $(LDFLAGS)
 
 clean:

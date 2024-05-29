@@ -1,0 +1,196 @@
+#ifndef SHADERPROGRAM_HPP
+#define SHADERPROGRAM_HPP
+
+#include<string>
+
+class ShaderProgram
+{
+public:
+    ShaderProgram();
+    ~ShaderProgram();
+   
+    void attachShader(const char* fileName,unsigned int shaderType);
+
+    void link();
+
+    void use();
+private:
+    std::string getShaderFromFile(const char* fileName);
+    
+    
+    
+    
+    unsigned int m_ProgramId;
+  
+};
+
+
+#endif
+
+#include "../include/shaderProgram.hpp"
+#include<glad/glad.h>
+#include<fstream>
+#include<iostream>
+ShaderProgram::ShaderProgram()
+{
+    m_ProgramId =glCreateProgram();
+}
+ShaderProgram::~ShaderProgram()
+{
+    glDeleteProgram(m_ProgramId);
+}
+void ShaderProgram::link()
+{
+    glLinkProgram(m_ProgramId);
+}
+void ShaderProgram::use()
+{
+    glUseProgram(m_ProgramId);
+}
+
+void ShaderProgram::attachShader(const char* fileName,unsigned int shaderType)
+{
+    unsigned int shaderId = glCreateShader(shaderType);
+
+    std::string sourceCode = getShaderFromFile(fileName);
+
+    const char* chSourceCode = &sourceCode[0];
+
+    glShaderSource(shaderId,1,&chSourceCode,0);
+
+    glCompileShader(shaderId);
+
+    glAttachShader(m_ProgramId,shaderId);
+
+    glDeleteShader(shaderId);
+
+}
+std::string ShaderProgram::getShaderFromFile(const char* fileName)
+{
+    std::ifstream file(fileName);
+
+    std::string data;
+
+    if(file.is_open())
+    {
+        
+        char readChar;
+
+        while((readChar=file.get())!=EOF)
+        {
+            data+=readChar;
+        }
+       
+        file.close();
+    }
+   
+
+
+    return data;
+
+
+}
+#version 330 core
+ out vec4 fragColor;
+ void main()
+ {
+    fragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+ }
+ #version 330 core
+layout (location = 0) in vec3 inPosition; 
+void main()
+{
+    gl_Position = vec4(inPosition, 1.0);
+}
+
+#include <iostream>
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include "../include/shaderProgram.hpp"
+
+// noktalara ait koordinat bilgileri.
+float vertices[] = {
+    -0.6f, -0.6f, 0.0f,
+    0.5f, -0.5f, 0.0f,
+    0.0f, 0.5f, 0.0f,
+    -0.6f, -0.6f, 0.0f,
+    0.5f, -0.5f, 0.0f,
+    0.0f, 0.5f, 0.0f
+
+};
+
+// OpenGL nesnelerinin id değerlerini tutacak olan değişkenler
+
+unsigned int VBO;
+unsigned int VAO;
+
+int main(int argc, char **argv)
+{
+    if (!glfwInit())
+        return -1;
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    GLFWwindow *window = glfwCreateWindow(800, 600, "JustAWindow", NULL, NULL);
+
+    if (window == NULL)
+    {
+        std::cout << "Pencere Olusturulamadi" << std::endl;
+
+        glfwTerminate();
+
+        return -1;
+    }
+
+    glfwMakeContextCurrent(window);
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    ShaderProgram program;
+
+    program.attachShader("./shaders/vshader.glsl", GL_VERTEX_SHADER);
+    program.attachShader("./shaders/fshader.glsl", GL_FRAGMENT_SHADER);
+    program.link();
+
+    // vertex array object oluşturuluyor
+    glGenVertexArrays(1, &VAO);
+    // vertex buffer object oluşuruluyor
+    glGenBuffers(1, &VBO);
+
+    // vertex array object aktif edildi.
+    glBindVertexArray(VAO);
+    // vertex buffer nesnesi aktif edildi.
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    // vertex buffer'a nokta bilgileri ytollanıyor
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // gönderilen vertex'e ait özellikler etiketleniyor
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    // özellik  etiket i aktif ediliyor.
+    glEnableVertexAttribArray(0);
+    // std::cout<<sizeof(vertices)/sizeof(float);
+    int verticiesNum = sizeof(vertices) / sizeof(float) / 3; // 3d olduğu için
+    while (!glfwWindowShouldClose(window))
+    {
+        // oluşturulacak resim başlangıç rengine boyanıyor
+        glClearColor(0.2f, 0.1f, 0.2f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // çizimde kullanılacak olan program nesnesi aktif ediliyor
+        program.use();
+        // çizimde kullanılacak olan Vertex array object aktif ediliyor
+        glBindVertexArray(VAO);
+        // çizim komutu gönderiliyor
+        glDrawArrays(GL_TRIANGLES, 0, 6); // tür, hangi noktadan çizime başlanacak, kaç tane çizilecek
+
+        glfwSwapBuffers(window);
+
+        glfwPollEvents();
+    }
+}

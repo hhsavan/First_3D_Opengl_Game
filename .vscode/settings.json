@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "*.txt": "cmake",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "ostream": "cpp",
+        "shaderprogram.hpp": "c"
     }
 }
