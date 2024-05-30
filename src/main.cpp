@@ -1,83 +1,91 @@
 #include <iostream>
-
-#include <glad/glad.h>
-
-#include <GLFW/glfw3.h>
+#include <thread>         // std::this_thread::sleep_for
+#include <chrono>         // std::chrono::seconds
+#include<glad/glad.h>
+#include<glm/vec3.hpp>
+#include<glm/glm.hpp>
+#include<GLFW/glfw3.h>
+#include<vector>
+#include<cmath>
+#include<glm/gtc/matrix_transform.hpp>
 #include "../include/shaderProgram.hpp"
+#include "../include/square.hpp"
+#include "../include/texturemanager.hpp"
+#include "../include/VertexArrayObject.hpp"
+#include "../include/MeshManager.hpp"
+#include "../include/Mesh.hpp"
 
-unsigned int VBO;
-unsigned int VAO;
 
-float deger = 0.0f;
-float length = 0.08;
+Mesh* mesh;
 
-glm::vec3 position = glm::vec3(1.0f,1.0f,0.0f);
-glm::vec4 color1 = glm::vec4(1.0f,0.0f,0.0f,1.0f);
-glm::vec4 color2 = glm::vec4(1.0f,1.0f,0.0f,1.0f);
-glm::vec4 color3 = glm::vec4(1.0f,0.0f,1.0f,1.0f);
+float angle;
+glm::vec3 position;
+float scale;
 
-// noktalara ait koordinat bilgileri.
-//iki üçgenle bir kare çizdirilmesi
-float vertices[] = {
-    -length / 2, length / 2, 0.0f,
-    -length / 2, -length / 2, 0.0f,
-    length / 2, -length / 2, 0.0f,
 
-    -length /  2,length / 2, 0.0f,
-    length / 2, -length / 2, 0.0f,
-    length / 2, length / 2, 0.0f,
 
-};
-// OpenGL nesnelerinin id değerlerini tutacak olan değişkenler
+unsigned int texture;
 
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    // printf("burda");
-    if (key == GLFW_KEY_ESCAPE)
-        glfwTerminate();
-
-    // eğer basılmışsa
-    // if (action == GLFW_PRESS)
+   if (key == GLFW_KEY_ESCAPE)
+        glfwTerminate();   
+    if(action==GLFW_PRESS)
     {
-
-        if (key == GLFW_KEY_LEFT)
+       
+        
+        
+        if(key==GLFW_KEY_LEFT)  
         {
-            position -= glm::vec3(length,0.0f,0.0f); 
+           position.x-=0.01;
         }
-        if (key == GLFW_KEY_RIGHT)
+        if(key==GLFW_KEY_RIGHT) 
         {
-            position += glm::vec3(length,0.0f,0.0f); 
-        }
-        if (key == GLFW_KEY_UP)
+            position.x+=0.01;
+        }    
+        if(key==GLFW_KEY_UP)  
         {
-            position += glm::vec3(0.0f,length,0.0f); 
+            position.y+=0.01;
         }
-        if (key == GLFW_KEY_DOWN)
+        if(key==GLFW_KEY_DOWN) 
         {
-            position -= glm::vec3(0.0f,length,0.0f); 
-        }
-    }
+            position.y-=0.01;
+        }                
+        
+        
+        if(key==GLFW_KEY_Q)
+        {
+            scale-=0.1;
+        }    
+           
+        if(key==GLFW_KEY_W)
+        {
+            scale+=0.1;
+        }            
+    }  
+           
 }
 
-int main(int argc, char **argv)
+int main(int argc,char** argv)
 {
-    #pragma region glfw and glad initializations
-    if (!glfwInit())
+    if(!glfwInit())
         return -1;
+    
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    
+    GLFWwindow* window = glfwCreateWindow(800,800,"İLk Programım",NULL,NULL);
 
-    GLFWwindow *window = glfwCreateWindow(800, 800, "firstOpengl", NULL, NULL);
-    if (window == NULL)
+    if(window==NULL)
     {
-        std::cout << "Pencere Olusturulamadi" << std::endl;
+        std::cout<<"Pencere Olusturulamadi"<<std::endl;
 
         glfwTerminate();
 
         return -1;
-    }
+    }    
     glfwSetKeyCallback(window, key_callback);
     glfwMakeContextCurrent(window);
 
@@ -85,67 +93,82 @@ int main(int argc, char **argv)
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
-    }
-    #pragma endregion
+    } 
     
+   
+    
+    texture = TextureManager::getInstance()->loadTexture("./images/container.jpg");
+
+
+    glm::mat4 mtxTransform(1);
+
+    angle=0.0f;
+    position = glm::vec3(0.0f,0.0f,0.0f);
+    scale = 1.0f;
+    
+    MeshManager* manager =MeshManager::getInstance();
+    mesh = manager->createCube();
+ 
     ShaderProgram program;
 
-    program.attachShader("./shaders/vshader.glsl", GL_VERTEX_SHADER);
-    program.attachShader("./shaders/fshader.glsl", GL_FRAGMENT_SHADER);
+    program.attachShader("./shaders/vshader.glsl",GL_VERTEX_SHADER);
+    program.attachShader("./shaders/fshader.glsl",GL_FRAGMENT_SHADER);
     program.link();
 
-    program.addUniform("uMove");
+   
     program.addUniform("uColor");
+    program.addUniform("uMtxTransform");
+   
+   
+    
+   
+   
+ 
+    glm::vec3 camPosition(2.0f,2.0f,2.0f);
+    glm::vec3 camLookAt(0.0f,0.0f,0.0f);
+    glm::vec3 camUp(0.0f,1.0f,0.0f);
 
-    // vertex array object oluşturuluyor
-    glGenVertexArrays(1, &VAO);
-    // vertex buffer object oluşuruluyor
-    glGenBuffers(1, &VBO);
+    glm::mat4 mtxCam = glm::lookAt(camPosition,camLookAt,camUp);
+    glm::mat4 mtxProj = glm::perspective(glm::radians(90.0f),(800.0f/800.0f),1.0f,100.0f);
 
-    // vertex array object aktif edildi.
-    glBindVertexArray(VAO);
-    // vertex buffer nesnesi aktif edildi.
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    // vertex buffer'a nokta bilgileri ytollanıyor
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    // gönderilen vertex'e ait özellikler etiketleniyor
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-    // özellik  etiket i aktif ediliyor.
-    glEnableVertexAttribArray(0);
 
-    while (!glfwWindowShouldClose(window))
+
+    glEnable(GL_DEPTH_TEST);
+    while(!glfwWindowShouldClose(window))
     {
-        // oluşturulacak resim başlangıç rengine boyanıyor
+        //oluşturulacak resim başlangıç rengine boyanıyor
         glClearColor(0.0f, 0.4f, 0.7f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // çizimde kullanılacak olan program nesnesi aktif ediliyor
-        program.use();
-
-   //çizim komutu gönderiliyor
-         ///1.Kare
-        program.setVec3("uMove",position);
-        program.setVec4("uColor",color1);
-        glDrawArrays(GL_TRIANGLES, 0,6);
-
-        ///2.Kare
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         
-        program.setVec3("uMove",position+glm::vec3(-length,0.0f,0.0f));
-        program.setVec4("uColor",color2);
-        glDrawArrays(GL_TRIANGLES, 0,6);
-
-        ///3.Kare
+        
+        glm::mat4 mtxRotation = glm::rotate(glm::mat4(1),glm::radians(angle),glm::vec3(0.0,1.0f,0.0f));
        
-        program.setVec3("uMove",position+glm::vec3(-length,length,0.0f));
-        program.setVec4("uColor",color3);
-        glDrawArrays(GL_TRIANGLES, 0,6);
+ 
+        mtxTransform = mtxProj*mtxCam*mtxRotation;
 
-        // çizimde kullanılacak olan Vertex array object aktif ediliyor
-        glBindVertexArray(VAO);
-        // çizim komutu gönderiliyor
+        angle+=1.0f;
+        //çizimde kullanılacak olan program nesnesi aktif ediliyor
+        program.use();
+       
+        //kaplama Aktif Ediliyor.
+        TextureManager::getInstance()->activateTexture(GL_TEXTURE0,texture);
+        
+        
+        //çizimde kullanılacak olan Vertex array object aktif ediliyor
+       
+        //çizim komutu gönderiliyor
+         ///1.Kare
+        
+        program.setVec4("uColor",glm::vec4(1.0f,0.0f,0.0f,1.0f));
+        program.setMat4("uMtxTransform",&mtxTransform);
+        
+        //daire index buffer kullanılarak kopyalanıyor.
+        mesh->draw(); 
+        std::this_thread::sleep_for (std::chrono::milliseconds(70));
 
         glfwSwapBuffers(window);
 
         glfwPollEvents();
     }
+
 }

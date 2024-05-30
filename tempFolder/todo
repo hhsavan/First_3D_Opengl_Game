@@ -1,5 +1,10 @@
 
-1- ekrana 2d bişeyler çizdirmek
-2- ekrana 3d bişeyler çizdirmek
-3- transformation
-4- 
+
+3d yılan oyunu:
+    yılan x-y doğrultusunda hareket edecek
+    kamera yukarıdan 30 derecelik bir açıyla yılana bakacak
+    etrafı çevirili bir alan olacak
+    etrafta çeşitli engeller olacak
+
+1- arka arkaya 3d küpler çizilecek. yı
+2- küpler hareket edecek.

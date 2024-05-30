@@ -32,19 +32,27 @@ void ShaderProgram::use()
 }
 void ShaderProgram::addUniform(const std::string& varName)
 {
-    m_UniformMap[varName] =   glGetUniformLocation(m_ProgramId,varName.c_str());
+    m_UniformVars[varName] =   glGetUniformLocation(m_ProgramId,varName.c_str());
 }
 void ShaderProgram::setFloat(const std::string& varName,float value)
 {
-    glUniform1f(m_UniformMap[varName],value);
+    glUniform1f(m_UniformVars[varName],value);
 }
-void ShaderProgram::setVec3(const std::string& varName,const glm::vec3& vec)
+void ShaderProgram::setVec3(const std::string& varName,const glm::vec3& value)
 {
-    glUniform3f(m_UniformMap[varName],vec.x,vec.y,vec.z);
+    glUniform3f(m_UniformVars[varName],value.x,value.y,value.z);
 }
-void ShaderProgram::setVec4(const std::string& varName,const glm::vec4& vec)
+void ShaderProgram::setMat3(const std::string& varName,const glm::mat3* ptrValue)
 {
-    glUniform4f(m_UniformMap[varName],vec.r,vec.g,vec.b,vec.a);
+    glUniformMatrix3fv(m_UniformVars[varName],1,false,(GLfloat*)ptrValue);
+}
+void ShaderProgram::setVec4(const std::string& varName,const glm::vec4& value)
+{
+    glUniform4f(m_UniformVars[varName],value.r,value.g,value.b,value.a);
+}
+void ShaderProgram::setMat4(const std::string& varName,const glm::mat4* mtx)
+{
+    glUniformMatrix4fv(m_UniformVars[varName],1,false,(GLfloat*)mtx);
 }
 void ShaderProgram::attachShader(const char* fileName,unsigned int shaderType)
 {
