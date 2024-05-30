@@ -13,6 +13,8 @@ public:
     static MeshManager* getInstance();
 
     Mesh* createCube();
+    Mesh* createSnake();
+    Mesh* createGameArea();
 private:
     static MeshManager* m_Instance;
     MeshManager();
