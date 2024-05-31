@@ -11,10 +11,10 @@
 #include "../include/shaderProgram.hpp"
 #include "../include/texturemanager.hpp"
 #include "../include/helpers.hpp"
-#include "../include/MeshManager.hpp"
-#include "../include/Mesh.hpp"
+// #include "../include/MeshManager.hpp"
+// #include "../include/Mesh.hpp"
 
-Mesh *mesh;
+// Mesh *mesh;
 float angle;
 glm::vec3 position;
 float scale;
@@ -124,8 +124,8 @@ int main(int argc, char **argv)
     texture3 = TextureManager::getInstance()->loadTexture("./images/container.jpg");
     texture4 = TextureManager::getInstance()->loadTexture("./images/soilTexture.jpg");
 
-    MeshManager *manager = MeshManager::getInstance();
-    mesh = manager->createGameArea();
+    // MeshManager *manager = MeshManager::getInstance();
+    // mesh = manager->createGameArea();
 
     ShaderProgram program;
     program.attachShader("./shaders/vshader.glsl", GL_VERTEX_SHADER);
@@ -136,36 +136,52 @@ int main(int argc, char **argv)
     program.addUniform("uMtxTransform");
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    //zbuffer
+    // zbuffer
     glEnable(GL_DEPTH_TEST);
-
+    const std::chrono::duration<double> targetFrameDuration(1.0 / 30.0);
     while (!glfwWindowShouldClose(window))
     {
+        auto frameStartTime = std::chrono::high_resolution_clock::now();
         glClearColor(0.0f, 0.4f, 0.7f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Handle input events
+        glfwPollEvents();
 
         glm::mat4 view = glm::lookAt(camPosition, camPosition + camFront, camUp);
         glm::mat4 projection = glm::perspective(glm::radians(fov), 800.0f / 800.0f, 0.1f, 100.0f);
 
         program.use();
+
         
-        // Draw Cube
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0.0f, -1.0f));
+        for (int i = 0; i < 3; ++i)
+        {
+            glm::vec3 position = glm::vec3(-1.0f + i * 2.0f, 0.0f, -1.0f);
+            float scale = 0.5f + i * 0.5f;
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), glm::vec3(scale));
+            glm::mat4 mtxTransform = projection * view * model;
+            program.setVec4("uColor", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+            program.setMat4("uMtxTransform", &mtxTransform);
+            TextureManager::getInstance()->activateTexture(GL_TEXTURE0, texture1);
+            drawCube(program.getShader());
+        }
+
+        float timeValue = glfwGetTime();
+        glm::vec3 rotationAxis = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f)) * glm::rotate(glm::mat4(1.0f), timeValue, rotationAxis);
         glm::mat4 mtxTransform = projection * view * model;
         program.setVec4("uColor", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
         program.setMat4("uMtxTransform", &mtxTransform);
         TextureManager::getInstance()->activateTexture(GL_TEXTURE0, texture1);
         drawCube(program.getShader());
 
-        // Draw Trapezoid
-        model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, -1.0f));
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(6.0f, 0.0f, -1.0f));
         mtxTransform = projection * view * model;
         program.setVec4("uColor", glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
         program.setMat4("uMtxTransform", &mtxTransform);
         TextureManager::getInstance()->activateTexture(GL_TEXTURE0, texture2);
         drawTrapezoid(program.getShader());
 
-        // Draw Sphere
         model = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0.0f, 1.0f));
         mtxTransform = projection * view * model;
         program.setVec4("uColor", glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
@@ -173,7 +189,6 @@ int main(int argc, char **argv)
         TextureManager::getInstance()->activateTexture(GL_TEXTURE0, texture3);
         drawPyramid(program.getShader());
 
-        // Draw Cylindir
         model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 1.0f));
         mtxTransform = projection * view * model;
         program.setVec4("uColor", glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
@@ -181,18 +196,14 @@ int main(int argc, char **argv)
         TextureManager::getInstance()->activateTexture(GL_TEXTURE0, texture4);
         drawCylinder(program.getShader());
 
-        // // Draw Pyramid
-        // model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 1.0f));
-        // mtxTransform = projection * view * model;
-        // program.setVec4("uColor", glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-        // program.setMat4("uMtxTransform", &mtxTransform);
-        // TextureManager::getInstance()->activateTexture(GL_TEXTURE0, texture4);
-        // drawPyramid(program.getShader());
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(70));
-
         glfwSwapBuffers(window);
-        glfwPollEvents();
+
+        auto frameEndTime = std::chrono::high_resolution_clock::now();
+        auto frameDuration = std::chrono::duration<double>(frameEndTime - frameStartTime);
+        if (frameDuration < targetFrameDuration)
+        {
+            std::this_thread::sleep_for(targetFrameDuration - frameDuration);
+        }
     }
 
     glfwTerminate();
